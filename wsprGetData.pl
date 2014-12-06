@@ -34,7 +34,7 @@ sub getData
 		my @LatLon;
 		my $LatLon;
 		my $unixTime;
-
+		my $gridLengthCorrection = 6;
 	
    		my $url="http://wsprnet.org/olddb?mode=html&band=all&limit=25&findcall=$call&findreporter=&sort=date";
     		my $data = get($url);
@@ -51,6 +51,8 @@ sub getData
 	
 				$callLocation= index ($data,$callsign,$evenRow);
 				$grid= substr($data, $callLocation+$callCorrection,6);
+				$gridLengthCorrection = gridLengthCorrection($grid);
+				$grid = gridCorrect($grid);
 				@LatLon = getLatLon($grid);
                                 $Lat = $LatLon[0];
                                 $Lon = $LatLon[1];
@@ -69,6 +71,9 @@ sub getData
 
                 		$callLocation= index ($data,$callsign,$oddRow);
                 		$grid= substr($data, $callLocation+$callCorrection,6);
+				$gridLengthCorrection = gridLengthCorrection($grid);
+                                $grid = gridCorrect($grid);
+
 				$num = $num + 1;
 
                 		print "Odd Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
@@ -127,3 +132,31 @@ sub unixTime {
                 $month = $month -1;
                 my $current = timegm($sec,$min,$hours,$day,$month,$year);
         }
+
+
+sub gridLengthCorrection 
+	{
+		my $grid = shift;
+		my $correction;
+		my $gridLength = index($grid, "&");
+		return $gridLength;
+		print "Result: $gridLength\n";
+	}
+
+
+sub gridCorrect
+	{
+		my $grid = shift;
+		my $correction;
+		my $gridLength = index($grid, "&");
+		if ($gridLength == 4)
+			{
+				chop $grid;
+				chop $grid;
+				return $grid;
+			}
+		else
+			{
+				return $grid;
+			}
+	}
