@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
- 
+use Time::Local;
 use LWP::Simple;
 
 my $callsign = "KB2PNM";
@@ -33,6 +33,7 @@ sub getData
 		my $Lon;
 		my @LatLon;
 		my $LatLon;
+		my $unixTime;
 
 	
    		my $url="http://wsprnet.org/olddb?mode=html&band=all&limit=25&findcall=$call&findreporter=&sort=date";
@@ -46,6 +47,7 @@ sub getData
 
 				$date = substr($data,$evenRow+38,10);
 				$time = substr($data,$evenRow+49,5);
+				$unixTime = unixTime($date,$time);
 	
 				$callLocation= index ($data,$callsign,$evenRow);
 				$grid= substr($data, $callLocation+$callCorrection,6);
@@ -55,7 +57,7 @@ sub getData
        
 				$num = $num + 1;                 		
 
-				print "Even Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
+				print "Even Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
 
 
 				 my $oddRow = index($data,"<tr id=\"oddrow\"><td align=left>&nbsp");
@@ -63,12 +65,13 @@ sub getData
 
                 		$date = substr($data,$oddRow+38,10);
                 		$time = substr($data,$oddRow+48,5);
+				$unixTime = unixTime($date,$time);
 
                 		$callLocation= index ($data,$callsign,$oddRow);
                 		$grid= substr($data, $callLocation+$callCorrection,6);
 				$num = $num + 1;
 
-                		print "Odd Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
+                		print "Odd Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
 				@LatLon = getLatLon($grid);
 				$Lat = $LatLon[0];
 				$Lon = $LatLon[1];
@@ -106,4 +109,21 @@ sub getLatLon
 	}
  
 
+sub unixTime {
+                my $date = shift;
+                my $time = shift;
+                my @timeArray = split(/:/,$time);
+                my $timeArray;
+                my $sec = 00;
+                my $min = $timeArray[1];
+                my $hours = $timeArray[0];
 
+                my @dateArray = split(/-/,$date);
+                my $dateArray;
+                my $day = $dateArray[2];
+                my $month = $dateArray[1];
+                my $year = $dateArray[0];
+
+                $month = $month -1;
+                my $current = timegm($sec,$min,$hours,$day,$month,$year);
+        }
