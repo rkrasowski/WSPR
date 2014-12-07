@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Time::Local;
 use LWP::Simple;
+use Array::Utils qw(:all);
 
 my $callsign = "KB2PNM";
 
@@ -35,7 +36,11 @@ sub getData
 		my $LatLon;
 		my $unixTime;
 		my $gridLengthCorrection = 6;
-	
+		my @allData;
+		my @repeatedArray = ();
+
+
+
    		my $url="http://wsprnet.org/olddb?mode=html&band=all&limit=25&findcall=$call&findreporter=&sort=date";
     		my $data = get($url);
 
@@ -48,7 +53,8 @@ sub getData
 				$date = substr($data,$evenRow+38,10);
 				$time = substr($data,$evenRow+49,5);
 				$unixTime = unixTime($date,$time);
-	
+				push (@repeatedArray, $unixTime);
+
 				$callLocation= index ($data,$callsign,$evenRow);
 				$grid= substr($data, $callLocation+$callCorrection,6);
 				$gridLengthCorrection = gridLengthCorrection($grid);
@@ -56,23 +62,29 @@ sub getData
 				@LatLon = getLatLon($grid);
                                 $Lat = $LatLon[0];
                                 $Lon = $LatLon[1];
-       
+       				$offset = $evenRow + 1;
 				$num = $num + 1;                 		
-
+				my @recordData = ($date,$time,$callsign,$unixTime,$grid,$Lat,$Lon);
+				push (@allData,@recordData);
+				#print "AllData: @allData\n";
 				print "Even Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
 
 
-				 my $oddRow = index($data,"<tr id=\"oddrow\"><td align=left>&nbsp");
+				 my $oddRow = index($data,"<tr id=\"oddrow\"><td align=left>&nbsp",$offset);
 
 
                 		$date = substr($data,$oddRow+38,10);
                 		$time = substr($data,$oddRow+48,5);
 				$unixTime = unixTime($date,$time);
+				push (@repeatedArray, $unixTime);				
 
                 		$callLocation= index ($data,$callsign,$oddRow);
                 		$grid= substr($data, $callLocation+$callCorrection,6);
 				$gridLengthCorrection = gridLengthCorrection($grid);
                                 $grid = gridCorrect($grid);
+				@recordData = ($date,$time,$callsign,$unixTime,$grid,$Lat,$Lon);
+                                push (@allData,@recordData);
+                               # print "AllData: @allData\n";
 
 				$num = $num + 1;
 
@@ -80,11 +92,27 @@ sub getData
 				@LatLon = getLatLon($grid);
 				$Lat = $LatLon[0];
 				$Lon = $LatLon[1];
-				$offset = $evenRow + 1;
+				$offset = $oddRow + 1;
     				$evenRow= index($data,"<tr id=\"evenrow\"><td align=left>&nbsp", $offset);
 
 			}
-	
+	print "Test message\n\n\n";
+
+		foreach(@repeatedArray)
+			{
+				print "Repeatedarray elemsnt is: $_\n";
+			}
+
+		my @toBeKill = eliminateRepeated(@repeatedArray);
+
+		print"To be eliminate: \n";
+		foreach(@toBeKill)
+			{
+				print" To be eliminate: $_\n";
+			}
+
+
+
 	}
  
 
@@ -160,3 +188,35 @@ sub gridCorrect
 				return $grid;
 			}
 	}
+
+sub eliminateRepeated
+	{
+		# identify records index that are repeated and return as array
+		my @list = @_;
+		my @totalArray;
+		my $num = 0;
+		my $item;
+		my %seen = ();
+		my @uniq = ();
+		my @uniqIndex = ();
+
+		# find records that are not repeated
+
+		foreach $item (@list) 
+			{
+				unless ($seen{$item}) 
+					{
+						# if we get here, we have not seen it before
+						$seen{$item} = 1;
+						push(@uniq, $item);
+						push(@uniqIndex, $num);
+					}
+				# records index  that are not repeated		
+				#print "Num is  $num\n";
+				push(@totalArray, $num);
+				$num = $num +1;
+			}
+		my @diff = array_diff(@totalArray, @uniqIndex);
+
+	}
+
