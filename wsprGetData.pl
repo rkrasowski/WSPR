@@ -63,13 +63,13 @@ sub getData
                                 $Lat = $LatLon[0];
                                 $Lon = $LatLon[1];
        				$offset = $evenRow + 1;
-				$num = $num + 1;                 		
+				                		
 				my @recordData = ($date,$time,$callsign,$unixTime,$grid,$Lat,$Lon);
 				push (@allData,@recordData);
 				#print "AllData: @allData\n";
 				print "Even Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
-
-
+				 $num = $num + 1;
+			
 				 my $oddRow = index($data,"<tr id=\"oddrow\"><td align=left>&nbsp",$offset);
 
 
@@ -86,7 +86,7 @@ sub getData
                                 push (@allData,@recordData);
                                # print "AllData: @allData\n";
 
-				$num = $num + 1;
+			
 
                 		print "Odd Row record number: $num\nCallsign: $callsign\nDate: $date\nTime: $time\nUNIX Time: $unixTime\nGrid: $grid\nLat: $Lat\nLon: $Lon\n\n";
 				@LatLon = getLatLon($grid);
@@ -94,9 +94,11 @@ sub getData
 				$Lon = $LatLon[1];
 				$offset = $oddRow + 1;
     				$evenRow= index($data,"<tr id=\"evenrow\"><td align=left>&nbsp", $offset);
-
+				$num = $num + 1;
 			}
-	print "Test message\n\n\n";
+
+POSTROUTINE:
+	print "Number is $num\n\n\n\n";
 
 		foreach(@repeatedArray)
 			{
@@ -111,7 +113,10 @@ sub getData
 				print" To be eliminate: $_\n";
 			}
 
-
+		foreach (@allData)
+			{
+				print "All data: $_\n";
+			}
 
 	}
  
@@ -156,6 +161,11 @@ sub unixTime {
                 my $day = $dateArray[2];
                 my $month = $dateArray[1];
                 my $year = $dateArray[0];
+		
+		if (!$month)
+			{
+				goto POSTROUTINE;
+			}
 
                 $month = $month -1;
                 my $current = timegm($sec,$min,$hours,$day,$month,$year);
